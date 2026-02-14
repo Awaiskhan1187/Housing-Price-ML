@@ -1,54 +1,38 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import pickle
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
 
-st.title("🏡 Housing Price ML Predictor")
+st.title("🏡 Housing Price Predictor")
 
-st.write("""
-Enter the features below to predict the house price
-""")
+# Load dataset
+data = pd.read_csv("housing.csv")
 
-# --- Load pre-trained model ---
-with open("model.pkl", "rb") as f:
-    model = pickle.load(f)
+# Select features (make sure these columns exist in your dataset)
+X = data[['sqft_living', 'bedrooms', 'bathrooms', 'floors', 'grade']]
+y = data['price']
 
-# --- User Inputs ---
-st.sidebar.header("Input Features")
+# Train model
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X, y)
 
-def user_input_features():
-    # Example features (adjust to match your model)
-    bedrooms = st.sidebar.slider("Bedrooms", 1, 10, 3)
-    bathrooms = st.sidebar.slider("Bathrooms", 1, 10, 2)
-    sqft_living = st.sidebar.number_input("Sqft Living", value=1000)
-    sqft_lot = st.sidebar.number_input("Sqft Lot", value=5000)
-    floors = st.sidebar.selectbox("Floors", [1, 2, 3])
-    waterfront = st.sidebar.selectbox("Waterfront", [0, 1])
-    view = st.sidebar.slider("View (0–4)", 0, 4, 0)
-    grade = st.sidebar.slider("Grade (1–13)", 1, 13, 7)
-    yr_built = st.sidebar.number_input("Year Built", value=1990)
+st.success("Model trained successfully!")
 
-    data = {
-        'bedrooms': bedrooms,
-        'bathrooms': bathrooms,
-        'sqft_living': sqft_living,
-        'sqft_lot': sqft_lot,
-        'floors': floors,
-        'waterfront': waterfront,
-        'view': view,
-        'grade': grade,
-        'yr_built': yr_built,
-    }
+# User input
+sqft = st.number_input("Square Footage", 500, 10000, 1000)
+bedrooms = st.slider("Bedrooms", 1, 10, 3)
+bathrooms = st.slider("Bathrooms", 1, 10, 2)
+floors = st.slider("Floors", 1, 3, 1)
+grade = st.slider("Grade", 1, 13, 7)
 
-    features = pd.DataFrame(data, index=[0])
-    return features
+if st.button("Predict Price"):
+    input_data = pd.DataFrame({
+        'sqft_living':[sqft],
+        'bedrooms':[bedrooms],
+        'bathrooms':[bathrooms],
+        'floors':[floors],
+        'grade':[grade]
+    })
 
-input_df = user_input_features()
-
-st.write("### Your Input Features")
-st.dataframe(input_df)
-
-# --- Predict ---
-prediction = model.predict(input_df)
-st.write("## 🏷️ Predicted House Price")
-st.success(f"${prediction[0]:,.2f}")
+    prediction = model.predict(input_data)
+    st.success(f"Predicted Price: ${prediction[0]:,.2f}")
